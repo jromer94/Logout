@@ -47,12 +47,12 @@ import java.io.InputStream
  */
 class LogoutActivity : AppCompatActivity() {
 
-    private var HOSTS = arrayOf("cp.cs.rutgers.edu", "grep.cs.rutgers.edu",
+    private var HOSTS = arrayOf("cd.cs.rutgers.edu","cp.cs.rutgers.edu", "grep.cs.rutgers.edu",
     "kill.cs.rutgers.edu", "less.cs.rutgers.edu", "ls.cs.rutgers.edu",
     "man.cs.rutgers.edu", "pwd.cs.rutgers.edu", "rm.cs.rutgers.edu",
-    "top.cs.rutgers.edu", "vi.cs.rutgers.edu", "cpp.cs.rutgers.edu",
-    "pascal.cs.rutgers.edu", "java.cs.rutgers.edu", "php.cs.rutgers.edu",
-    "perl.cs.rutgers.edu", "lisp.cs.rutgers.edu", "basic.cs.rutgers.edu",
+    "top.cs.rutgers.edu", "vi.cs.rutgers.edu", "assembly.cs.rutgers.edu", "cpp.cs.rutgers.edu",
+    "pascal.cs.rutgers.edu", "java.cs.rutgers.edu", "python.cs.rutgers.edu",
+    "perl.cs.rutgers.edu", "lisp.cs.rutgers.edu", "basic.cs.rutgers.edu", "batch.cs.rutgers.edu",
     "prolog.cs.rutgers.edu", "assembly.cs.rutgers.edu", "adapter.cs.rutgers.edu",
     "builder.cs.rutgers.edu", "command.cs.rutgers.edu", "composite.cs.rutgers.edu",
     "decorator.cs.rutgers.edu", "design.cs.rutgers.edu", "facade.cs.rutgers.edu",
