@@ -33,6 +33,8 @@ dependencies {
     compile 'io.reactivex:rxjava-math:1.0.0'
     compile 'com.jakewharton.rxbinding:rxbinding:0.2.0'
     compile 'io.reactivex:rxandroid:1.0.1'
+
+    compile 'com.jcraft:jsch:0.1.53'
 }
 buildscript {
     ext.kotlin_version = '1.0.0'

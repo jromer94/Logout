@@ -31,27 +31,46 @@ import android.widget.TextView
 import java.util.ArrayList
 
 import android.Manifest.permission.READ_CONTACTS
+import android.util.Log
+import com.jakewharton.rxbinding.view.RxView
 import com.jakewharton.rxbinding.widget.RxTextView
+import com.jcraft.jsch.JSch
 import rx.Observable
 import rx.Subscription
+import rx.android.plugins.RxAndroidSchedulersHook
+import rx.schedulers.Schedulers
+import java.io.ByteArrayInputStream
+import java.io.InputStream
 
 /**
  * A login screen that offers login via email/password.
  */
 class LogoutActivity : AppCompatActivity() {
-    /**
-     * Keep track of the login task to ensure we can cancel it if requested.
-     */
-    private var mAuthTask: UserLoginTask? = null
+
+    private var HOSTS = arrayOf("cp.cs.rutgers.edu", "grep.cs.rutgers.edu",
+    "kill.cs.rutgers.edu", "less.cs.rutgers.edu", "ls.cs.rutgers.edu",
+    "man.cs.rutgers.edu", "pwd.cs.rutgers.edu", "rm.cs.rutgers.edu",
+    "top.cs.rutgers.edu", "vi.cs.rutgers.edu", "cpp.cs.rutgers.edu",
+    "pascal.cs.rutgers.edu", "java.cs.rutgers.edu", "php.cs.rutgers.edu",
+    "perl.cs.rutgers.edu", "lisp.cs.rutgers.edu", "basic.cs.rutgers.edu",
+    "prolog.cs.rutgers.edu", "assembly.cs.rutgers.edu", "adapter.cs.rutgers.edu",
+    "builder.cs.rutgers.edu", "command.cs.rutgers.edu", "composite.cs.rutgers.edu",
+    "decorator.cs.rutgers.edu", "design.cs.rutgers.edu", "facade.cs.rutgers.edu",
+    "factory.cs.rutgers.edu", "flyweight.cs.rutgers.edu", "interpreter.cs.rutgers.edu",
+    "mediator.cs.rutgers.edu", "null.cs.rutgers.edu", "patterns.cs.rutgers.edu",
+    "prototype.cs.rutgers.edu", "singleton.cs.rutgers.edu","specification.cs.rutgers.edu",
+    "state.cs.rutgers.edu", "strategy.cs.rutgers.edu", "template.cs.rutgers.edu",
+    "utility.cs.rutgers.edu", "visitor.cs.rutgers.edu")
 
     private var mNetidChangeObservable: Observable<CharSequence>? = null
     private var mPasswordChangeObservable: Observable<CharSequence>? = null
 
+    private var mOnClickSubscription: Subscription? = null
     private var mSubscription: Subscription? = null
 
     // UI references.
     private var mEmailSignInButton: Button? = null
-    private var mEmailView: EditText? = null
+    private var mNetidView: EditText? = null
     private var mPasswordView: EditText? = null
     private var mProgressView: View? = null
     private var mLoginFormView: View? = null
@@ -60,13 +79,21 @@ class LogoutActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_logout)
         // Set up the login form.
-        mEmailView = findViewById(R.id.email) as EditText
+        mNetidView = findViewById(R.id.email) as EditText
 
         mPasswordView = findViewById(R.id.password) as EditText
 
         mEmailSignInButton = findViewById(R.id.email_sign_in_button) as Button
 
-        mNetidChangeObservable = RxTextView.textChanges(mEmailView!!)
+        mOnClickSubscription = RxView.clicks(mEmailSignInButton!!)
+            .observeOn(Schedulers.io())
+            .subscribe({
+                for(host in HOSTS) {
+                    sshSignOut(host)
+                }
+            })
+
+        mNetidChangeObservable = RxTextView.textChanges(mNetidView!!)
         mPasswordChangeObservable = RxTextView.textChanges(mPasswordView!!)
 
         combineLatestEvents()
@@ -89,104 +116,27 @@ class LogoutActivity : AppCompatActivity() {
                 }
     }
 
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
-    private fun showProgress(show: Boolean) {
-        // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
-        // for very easy animations. If available, use these APIs to fade-in
-        // the progress spinner.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
-            val shortAnimTime = resources.getInteger(android.R.integer.config_shortAnimTime)
+    private fun sshSignOut(host: String) {
+        val jsch = JSch()
+        //host = "null.cs.rutgers.edu"
+        val user = mNetidView!!.text.toString()
+        val password = mPasswordView!!.text.toString()
 
-            mLoginFormView!!.visibility = if (show) View.GONE else View.VISIBLE
-            mLoginFormView!!.animate().setDuration(shortAnimTime.toLong()).alpha(
-                    (if (show) 0 else 1).toFloat()).setListener(object : AnimatorListenerAdapter() {
-                override fun onAnimationEnd(animation: Animator) {
-                    mLoginFormView!!.visibility = if (show) View.GONE else View.VISIBLE
-                }
-            })
+        val session = jsch.getSession(user, host, 22)
+        session.setConfig("StrictHostKeyChecking", "no")
+        session.setPassword(password)
 
-            mProgressView!!.visibility = if (show) View.VISIBLE else View.GONE
-            mProgressView!!.animate().setDuration(shortAnimTime.toLong()).alpha(
-                    (if (show) 1 else 0).toFloat()).setListener(object : AnimatorListenerAdapter() {
-                override fun onAnimationEnd(animation: Animator) {
-                    mProgressView!!.visibility = if (show) View.VISIBLE else View.GONE
-                }
-            })
-        } else {
-            // The ViewPropertyAnimator APIs are not available, so simply show
-            // and hide the relevant UI components.
-            mProgressView!!.visibility = if (show) View.VISIBLE else View.GONE
-            mLoginFormView!!.visibility = if (show) View.GONE else View.VISIBLE
-        }
+        session.connect(30000)
+
+        val channel = session.openChannel("shell")
+        val input = ByteArrayInputStream("killall -u $user \n".toByteArray())
+        channel.inputStream = input
+
+        channel.connect(30000)
+
+        Log.d("Logged out of", host)
+
     }
 
-    private interface ProfileQuery {
-        companion object {
-            val PROJECTION = arrayOf(ContactsContract.CommonDataKinds.Email.ADDRESS, ContactsContract.CommonDataKinds.Email.IS_PRIMARY)
-
-            val ADDRESS = 0
-            val IS_PRIMARY = 1
-        }
-    }
-
-    /**
-     * Represents an asynchronous login/registration task used to authenticate
-     * the user.
-     */
-    inner class UserLoginTask internal constructor(private val mEmail: String, private val mPassword: String) : AsyncTask<Void, Void, Boolean>() {
-
-        override fun doInBackground(vararg params: Void): Boolean? {
-            // TODO: attempt authentication against a network service.
-
-            try {
-                // Simulate network access.
-                Thread.sleep(2000)
-            } catch (e: InterruptedException) {
-                return false
-            }
-
-            for (credential in DUMMY_CREDENTIALS) {
-                val pieces = credential.split(":".toRegex()).dropLastWhile({ it.isEmpty() }).toTypedArray()
-                if (pieces[0] == mEmail) {
-                    // Account exists, return true if the password matches.
-                    return pieces[1] == mPassword
-                }
-            }
-
-            // TODO: register the new account here.
-            return true
-        }
-
-        override fun onPostExecute(success: Boolean?) {
-            mAuthTask = null
-            showProgress(false)
-
-            if (success!!) {
-                finish()
-            } else {
-                mPasswordView!!.error = getString(R.string.error_incorrect_password)
-                mPasswordView!!.requestFocus()
-            }
-        }
-
-        override fun onCancelled() {
-            mAuthTask = null
-            showProgress(false)
-        }
-    }
-
-    companion object {
-
-        /**
-         * Id to identity READ_CONTACTS permission request.
-         */
-        private val REQUEST_READ_CONTACTS = 0
-
-        /**
-         * A dummy authentication store containing known user names and passwords.
-         * TODO: remove after connecting to a real authentication system.
-         */
-        private val DUMMY_CREDENTIALS = arrayOf("foo@example.com:hello", "bar@example.com:world")
-    }
 }
 
