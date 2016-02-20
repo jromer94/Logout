@@ -36,8 +36,10 @@ import com.jakewharton.rxbinding.view.RxView
 import com.jakewharton.rxbinding.widget.RxTextView
 import com.jcraft.jsch.JSch
 import rx.Observable
+import rx.Scheduler
 import rx.Subscription
 import rx.android.plugins.RxAndroidSchedulersHook
+import rx.android.schedulers.AndroidSchedulers
 import rx.schedulers.Schedulers
 import java.io.ByteArrayInputStream
 import java.io.InputStream
@@ -85,16 +87,10 @@ class LogoutActivity : AppCompatActivity() {
 
         mEmailSignInButton = findViewById(R.id.email_sign_in_button) as Button
 
-        mOnClickSubscription = RxView.clicks(mEmailSignInButton!!)
-            .observeOn(Schedulers.io())
-            .subscribe({
-                for(host in HOSTS) {
-                    sshSignOut(host)
-                }
-            })
-
         mNetidChangeObservable = RxTextView.textChanges(mNetidView!!)
         mPasswordChangeObservable = RxTextView.textChanges(mPasswordView!!)
+
+        onClick()
 
         combineLatestEvents()
 
@@ -116,9 +112,28 @@ class LogoutActivity : AppCompatActivity() {
                 }
     }
 
-    private fun sshSignOut(host: String) {
+    private fun onClick(){
+        mOnClickSubscription = RxView.clicks(mEmailSignInButton!!)
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                //set subscribeOn to io here to make sure clicks happens on main thread
+                .flatMap { Observable.from(HOSTS).subscribeOn(Schedulers.io()) }
+                .map { sshSignOut(it) }
+                .onErrorReturn { it.toString() }
+                .subscribe({
+                    Log.d("Signout of", it)
+                }, {
+                    //Should never get here
+                    Log.d(it.toString(), "Error found")
+                }, {
+                    Log.d("completed", "Logout")
+                    onClick()
+                })
+    }
+
+    private fun sshSignOut(host: String): String {
+
         val jsch = JSch()
-        //host = "null.cs.rutgers.edu"
         val user = mNetidView!!.text.toString()
         val password = mPasswordView!!.text.toString()
 
@@ -134,7 +149,7 @@ class LogoutActivity : AppCompatActivity() {
 
         channel.connect(30000)
 
-        Log.d("Logged out of", host)
+        return host
 
     }
 
