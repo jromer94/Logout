@@ -121,7 +121,10 @@ class LogoutActivity : AppCompatActivity() {
                 .map { sshSignOut(it) }
                 .onErrorReturn { it.toString() }
                 .subscribe({
-                    Log.d("Signout of", it)
+                    if (it !in HOSTS)
+                        Log.d("Error found", it)
+                    else
+                        Log.d("Signout of", it)
                 }, {
                     //Should never get here
                     Log.d(it.toString(), "Error found")
