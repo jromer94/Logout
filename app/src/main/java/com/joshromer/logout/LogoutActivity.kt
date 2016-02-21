@@ -1,48 +1,24 @@
 package com.joshromer.logout
 
-import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
-import android.annotation.TargetApi
-import android.content.pm.PackageManager
-import android.support.design.widget.Snackbar
 import android.support.v7.app.AppCompatActivity
-import android.app.LoaderManager.LoaderCallbacks
 
-import android.content.CursorLoader
-import android.content.Loader
-import android.database.Cursor
-import android.net.Uri
-import android.os.AsyncTask
-
-import android.os.Build
 import android.os.Bundle
-import android.provider.ContactsContract
-import android.text.TextUtils
-import android.view.KeyEvent
+
 import android.view.View
-import android.view.View.OnClickListener
-import android.view.inputmethod.EditorInfo
-import android.widget.ArrayAdapter
-import android.widget.AutoCompleteTextView
-import android.widget.Button
+
 import android.widget.EditText
-import android.widget.TextView
 
-import java.util.ArrayList
 
-import android.Manifest.permission.READ_CONTACTS
 import android.util.Log
+import android.widget.Button
 import com.jakewharton.rxbinding.view.RxView
 import com.jakewharton.rxbinding.widget.RxTextView
 import com.jcraft.jsch.JSch
 import rx.Observable
-import rx.Scheduler
 import rx.Subscription
-import rx.android.plugins.RxAndroidSchedulersHook
 import rx.android.schedulers.AndroidSchedulers
 import rx.schedulers.Schedulers
 import java.io.ByteArrayInputStream
-import java.io.InputStream
 
 /**
  * A login screen that offers login via email/password.
@@ -104,9 +80,9 @@ class LogoutActivity : AppCompatActivity() {
                 {a, b -> a.isNotEmpty() && b.isNotEmpty()})
                 .subscribe {valid ->
                     if(valid){
-                        mEmailSignInButton!!.text = "Enabled"
+                        mEmailSignInButton!!.isEnabled = true
                     } else {
-                        mEmailSignInButton!!.text = "Disabled"
+                        mEmailSignInButton!!.isEnabled = false
                     }
 
                 }
