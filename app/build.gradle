@@ -33,6 +33,7 @@ dependencies {
     compile 'io.reactivex:rxjava-math:1.0.0'
     compile 'com.jakewharton.rxbinding:rxbinding:0.2.0'
     compile 'io.reactivex:rxandroid:1.0.1'
+    compile 'com.github.anasanasanas123:MaterialDesignLibrary:1.7'
 
     compile 'com.jcraft:jsch:0.1.53'
 }
@@ -43,8 +44,11 @@ buildscript {
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+
     }
 }
 repositories {
     mavenCentral()
+    jcenter()
+    maven { url "https://jitpack.io" }
 }

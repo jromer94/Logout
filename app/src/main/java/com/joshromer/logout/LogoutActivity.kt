@@ -3,6 +3,7 @@ package com.joshromer.logout
 import android.support.v7.app.AppCompatActivity
 
 import android.os.Bundle
+import android.support.design.widget.Snackbar
 
 import android.view.View
 
@@ -11,6 +12,7 @@ import android.widget.EditText
 
 import android.util.Log
 import android.widget.Button
+import com.gc.materialdesign.views.ProgressBarDeterminate
 import com.jakewharton.rxbinding.view.RxView
 import com.jakewharton.rxbinding.widget.RxTextView
 import com.jcraft.jsch.JSch
@@ -28,7 +30,7 @@ class LogoutActivity : AppCompatActivity() {
     private var HOSTS = arrayOf("cd.cs.rutgers.edu","cp.cs.rutgers.edu", "grep.cs.rutgers.edu",
     "kill.cs.rutgers.edu", "less.cs.rutgers.edu", "ls.cs.rutgers.edu",
     "man.cs.rutgers.edu", "pwd.cs.rutgers.edu", "rm.cs.rutgers.edu",
-    "top.cs.rutgers.edu", "vi.cs.rutgers.edu", "assembly.cs.rutgers.edu", "cpp.cs.rutgers.edu",
+    "top.cs.rutgers.edu", "vi.cs.rutgers.edu", "cpp.cs.rutgers.edu",
     "pascal.cs.rutgers.edu", "java.cs.rutgers.edu", "python.cs.rutgers.edu",
     "perl.cs.rutgers.edu", "lisp.cs.rutgers.edu", "basic.cs.rutgers.edu", "batch.cs.rutgers.edu",
     "prolog.cs.rutgers.edu", "assembly.cs.rutgers.edu", "adapter.cs.rutgers.edu",
@@ -47,31 +49,31 @@ class LogoutActivity : AppCompatActivity() {
     private var mSubscription: Subscription? = null
 
     // UI references.
-    private var mEmailSignInButton: Button? = null
+    private var mLogoutButton: Button? = null
     private var mNetidView: EditText? = null
     private var mPasswordView: EditText? = null
-    private var mProgressView: View? = null
-    private var mLoginFormView: View? = null
+    private var mProgressView: ProgressBarDeterminate? = null
+    private var mLogoutFormView: View? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_logout)
-        // Set up the login form.
         mNetidView = findViewById(R.id.email) as EditText
 
         mPasswordView = findViewById(R.id.password) as EditText
 
-        mEmailSignInButton = findViewById(R.id.email_sign_in_button) as Button
+        mLogoutButton = findViewById(R.id.email_sign_in_button) as Button
 
         mNetidChangeObservable = RxTextView.textChanges(mNetidView!!)
         mPasswordChangeObservable = RxTextView.textChanges(mPasswordView!!)
 
-        onClick()
+        onClickRx()
 
         combineLatestEvents()
 
-        mLoginFormView = findViewById(R.id.login_form)
-        mProgressView = findViewById(R.id.login_progress)
+        mLogoutFormView = findViewById(R.id.login_form)
+        mProgressView = findViewById(R.id.logout_progress) as ProgressBarDeterminate
+        mProgressView!!.setMax(HOSTS.size)
 
     }
 
@@ -80,33 +82,39 @@ class LogoutActivity : AppCompatActivity() {
                 {a, b -> a.isNotEmpty() && b.isNotEmpty()})
                 .subscribe {valid ->
                     if(valid){
-                        mEmailSignInButton!!.isEnabled = true
+                        mLogoutButton!!.isEnabled = true
                     } else {
-                        mEmailSignInButton!!.isEnabled = false
+                        mLogoutButton!!.isEnabled = false
                     }
 
                 }
     }
 
-    private fun onClick(){
-        mOnClickSubscription = RxView.clicks(mEmailSignInButton!!)
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .observeOn(AndroidSchedulers.mainThread())
+    private fun onClickRx(){
+        mOnClickSubscription = RxView.clicks(mLogoutButton!!)
                 //set subscribeOn to io here to make sure clicks happens on main thread
-                .flatMap { Observable.from(HOSTS).subscribeOn(Schedulers.io()) }
+                .flatMap { Observable.from(HOSTS).subscribeOn(Schedulers.io())}
                 .map { sshSignOut(it) }
                 .onErrorReturn { it.toString() }
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({
-                    if (it !in HOSTS)
+                    if (it !in HOSTS) {
                         Log.d("Error found", it)
-                    else
-                        Log.d("Signout of", it)
+                        //TODO update for other errorsj
+                        Snackbar.make(mLogoutFormView!!, "Authentication Failed", Snackbar.LENGTH_LONG).show()
+                        mProgressView!!.progress = 0
+                    }
+                    else {
+                        Log.d("Signout of ${HOSTS.indexOf(it)}", it)
+                        mProgressView!!.progress = HOSTS.indexOf(it) + 1
+                    }
+
                 }, {
                     //Should never get here
                     Log.d(it.toString(), "Error found")
                 }, {
                     Log.d("completed", "Logout")
-                    onClick()
+                    onClickRx()
                 })
     }
 
