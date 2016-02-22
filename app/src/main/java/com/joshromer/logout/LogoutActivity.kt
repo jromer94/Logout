@@ -58,11 +58,11 @@ class LogoutActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_logout)
-        mNetidView = findViewById(R.id.email) as EditText
+        mNetidView = findViewById(R.id.netid) as EditText
 
         mPasswordView = findViewById(R.id.password) as EditText
 
-        mLogoutButton = findViewById(R.id.email_sign_in_button) as Button
+        mLogoutButton = findViewById(R.id.logout_button) as Button
 
         mNetidChangeObservable = RxTextView.textChanges(mNetidView!!)
         mPasswordChangeObservable = RxTextView.textChanges(mPasswordView!!)
@@ -71,7 +71,7 @@ class LogoutActivity : AppCompatActivity() {
 
         combineLatestEvents()
 
-        mLogoutFormView = findViewById(R.id.login_form)
+        mLogoutFormView = findViewById(R.id.logout_form)
         mProgressView = findViewById(R.id.logout_progress) as ProgressBarDeterminate
         mProgressView!!.setMax(HOSTS.size)
 
