@@ -21,6 +21,7 @@ import rx.Subscription
 import rx.android.schedulers.AndroidSchedulers
 import rx.schedulers.Schedulers
 import java.io.ByteArrayInputStream
+import butterknife.bindView 
 
 /**
  * A login screen that offers login via email/password.
@@ -49,32 +50,24 @@ class LogoutActivity : AppCompatActivity() {
     private var mSubscription: Subscription? = null
 
     // UI references.
-    private var mLogoutButton: Button? = null
-    private var mNetidView: EditText? = null
-    private var mPasswordView: EditText? = null
-    private var mProgressView: ProgressBarDeterminate? = null
-    private var mLogoutFormView: View? = null
+    private val mLogoutButton: Button by bindView(R.id.logout_button)
+    private val mNetidView: EditText by bindView(R.id.netid)
+    private val mPasswordView: EditText by bindView(R.id.password)
+    private val mProgressView: ProgressBarDeterminate by bindView(R.id.logout_progress)
+    private val mLogoutFormView: View? by bindView(R.id.logout_form)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_logout)
-        mNetidView = findViewById(R.id.netid) as EditText
 
-        mPasswordView = findViewById(R.id.password) as EditText
-
-        mLogoutButton = findViewById(R.id.logout_button) as Button
-
-        mNetidChangeObservable = RxTextView.textChanges(mNetidView!!)
-        mPasswordChangeObservable = RxTextView.textChanges(mPasswordView!!)
+        mNetidChangeObservable = RxTextView.textChanges(mNetidView)
+        mPasswordChangeObservable = RxTextView.textChanges(mPasswordView)
 
         onClickRx()
 
         combineLatestEvents()
 
-        mLogoutFormView = findViewById(R.id.logout_form)
-        mProgressView = findViewById(R.id.logout_progress) as ProgressBarDeterminate
-        mProgressView!!.setMax(HOSTS.size)
-
+        mProgressView.setMax(HOSTS.size)
     }
 
     private fun combineLatestEvents() {
@@ -82,16 +75,16 @@ class LogoutActivity : AppCompatActivity() {
                 {a, b -> a.isNotEmpty() && b.isNotEmpty()})
                 .subscribe {valid ->
                     if(valid){
-                        mLogoutButton!!.isEnabled = true
+                        mLogoutButton.isEnabled = true
                     } else {
-                        mLogoutButton!!.isEnabled = false
+                        mLogoutButton.isEnabled = false
                     }
 
                 }
     }
 
     private fun onClickRx(){
-        mOnClickSubscription = RxView.clicks(mLogoutButton!!)
+        mOnClickSubscription = RxView.clicks(mLogoutButton)
                 //set subscribeOn to io here to make sure clicks happens on main thread
                 .flatMap { Observable.from(HOSTS).subscribeOn(Schedulers.io())}
                 .map { sshSignOut(it) }
@@ -102,11 +95,11 @@ class LogoutActivity : AppCompatActivity() {
                         Log.d("Error found", it)
                         //TODO update for other errorsj
                         Snackbar.make(mLogoutFormView!!, "Authentication Failed", Snackbar.LENGTH_LONG).show()
-                        mProgressView!!.progress = 0
+                        mProgressView.progress = 0
                     }
                     else {
                         Log.d("Signout of ${HOSTS.indexOf(it)}", it)
-                        mProgressView!!.progress = HOSTS.indexOf(it) + 1
+                        mProgressView.progress = HOSTS.indexOf(it) + 1
                     }
 
                 }, {
@@ -120,9 +113,11 @@ class LogoutActivity : AppCompatActivity() {
 
     private fun sshSignOut(host: String): String {
 
+        Log.d("THREAD for $host:", Thread.currentThread().name)
+
         val jsch = JSch()
-        val user = mNetidView!!.text.toString()
-        val password = mPasswordView!!.text.toString()
+        val user = mNetidView.text.toString()
+        val password = mPasswordView.text.toString()
 
         val session = jsch.getSession(user, host, 22)
         session.setConfig("StrictHostKeyChecking", "no")
